@@ -3,9 +3,11 @@ import { isCalendarDate } from "./date.ts";
 type Options = { fetchImpl?: typeof fetch; now?: () => Date; timeoutMs?: number };
 type ProviderData = {
   hourly_units: Record<string, string>;
-  hourly: { time: number[]; temperature_2m: (number | null)[]; rain?: (number | null)[]; showers?: (number | null)[] };
+  hourly: { time: number[]; temperature_2m: (number | null)[]; precipitation: (number | null)[]; rain: (number | null)[]; showers?: (number | null)[] };
 };
-type Slot = { time: string; rain: boolean; temp_c: number };
+type Features = { temp_c: number; precip_mm: number; rain_mm: number };
+type Slot = Features & { time: string; time_local: string; rain: boolean };
+const HISTORY_YEARS = 3;
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
@@ -41,14 +43,35 @@ function midnight(date: string) {
   }
   return time;
 }
-function rainChoice() {
-  return Response.json({
-    error: "A complete forecast is unavailable for this date. Choose rain=true or rain=false to simulate using historical temperatures.",
-    requires_rain_choice: true,
-  }, { status: 422 });
-}
 function finite(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+function localTimestamp(time: number) {
+  const p = localParts(time);
+  const offset = (Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour)) - Math.floor(time / HOUR) * HOUR) / HOUR;
+  return new Date(time + offset * HOUR).toISOString().slice(0, 19)
+    + `${offset < 0 ? "-" : "+"}${String(Math.abs(offset)).padStart(2, "0")}:00`;
+}
+function features(data: ProviderData, index: number | undefined, forecast: boolean): Features {
+  if (index === undefined) throw new Error("Missing weather hour");
+  const temp = data.hourly.temperature_2m[index];
+  const precipitation = data.hourly.precipitation[index];
+  const rain = data.hourly.rain[index];
+  const showers = forecast ? data.hourly.showers?.[index] : 0;
+  if (!finite(temp) || !finite(precipitation) || !finite(rain) || !finite(showers)) throw new Error("Incomplete weather readings");
+  // The archive's rain already includes showers; forecasts report them separately.
+  return { temp_c: temp, precip_mm: precipitation, rain_mm: rain + showers };
+}
+function average(rows: Features[]): Features {
+  if (!rows.length) throw new Error("No historical readings for this hour");
+  return {
+    temp_c: rows.reduce((sum, row) => sum + row.temp_c, 0) / rows.length,
+    precip_mm: rows.reduce((sum, row) => sum + row.precip_mm, 0) / rows.length,
+    rain_mm: rows.reduce((sum, row) => sum + row.rain_mm, 0) / rows.length,
+  };
+}
+function slot(time: number, values: Features): Slot {
+  return { time: new Date(time).toISOString(), time_local: localTimestamp(time), rain: values.rain_mm > 0, ...values };
 }
 
 export function createWeatherHandler({ fetchImpl = fetch, now = () => new Date(), timeoutMs = 10_000 }: Options = {}) {
@@ -62,7 +85,7 @@ export function createWeatherHandler({ fetchImpl = fetch, now = () => new Date()
     if (!response.ok) throw new Error("Weather provider failed");
     const data = await response.json() as ProviderData;
     const times = data?.hourly?.time;
-    const variables = forecast ? ["temperature_2m", "rain", "showers"] as const : ["temperature_2m"] as const;
+    const variables = forecast ? ["temperature_2m", "precipitation", "rain", "showers"] as const : ["temperature_2m", "precipitation", "rain"] as const;
     if (!Array.isArray(times) || !times.length || data?.hourly_units?.time !== "unixtime"
       || times.some((t, i) => !finite(t) || t % 3600 !== 0 || (i > 0 && t !== times[i - 1] + 3600))
       || variables.some(variable => {
@@ -71,8 +94,10 @@ export function createWeatherHandler({ fetchImpl = fetch, now = () => new Date()
           || !Array.isArray(values) || values.length !== times.length
           || values.some(value => value !== null && (!finite(value) || (variable !== "temperature_2m" && value < 0)));
       })) throw new Error("Invalid weather data");
-    if (cache.size >= 64) cache.delete(cache.keys().next().value!);
-    cache.set(key, { data, expires: now().getTime() + (forecast ? 15 * 60_000 : DAY) });
+    if (variables.every(variable => data.hourly[variable]!.every(finite))) {
+      if (cache.size >= 64) cache.delete(cache.keys().next().value!);
+      cache.set(key, { data, expires: now().getTime() + (forecast ? 15 * 60_000 : DAY) });
+    }
     return data;
   }
 
@@ -80,86 +105,75 @@ export function createWeatherHandler({ fetchImpl = fetch, now = () => new Date()
     const url = new URL(forecast ? "https://api.open-meteo.com/v1/forecast" : "https://archive-api.open-meteo.com/v1/archive");
     url.search = new URLSearchParams({
       ...COORDINATES,
-      timezone: forecast && now().getTime() >= PERMANENT_TIME_START ? PERMANENT_TIMEZONE : TIMEZONE,
-      timeformat: "unixtime", temperature_unit: "celsius",
-      hourly: forecast ? "temperature_2m,rain,showers" : "temperature_2m",
+      timezone: forecast ? (now().getTime() >= PERMANENT_TIME_START ? PERMANENT_TIMEZONE : TIMEZONE) : "GMT",
+      timeformat: "unixtime", temperature_unit: "celsius", precipitation_unit: "mm",
+      hourly: forecast ? "temperature_2m,precipitation,rain,showers" : "temperature_2m,precipitation,rain",
     }).toString();
     return url;
   }
 
-  async function historicalTemperatures(date: string, year: number, signal: AbortSignal) {
-    const readings = await Promise.all([1, 2, 3].map(async offset => {
-      const referenceYear = year - offset;
-      let reference = `${referenceYear}${date.slice(4)}`;
-      if (!isCalendarDate(reference)) reference = `${referenceYear}-02-28`;
-      const start = addDays(reference, -7);
-      const end = addDays(reference, 7);
+  async function historicalFeatures(date: string, years: number[], signal: AbortSignal) {
+    const profiles = await Promise.all(years.map(async year => {
+      let reference = `${year}${date.slice(4)}`;
+      if (!isCalendarDate(reference)) reference = `${year}-02-28`;
+      const start = midnight(reference);
+      const end = midnight(addDays(reference, 1));
       const url = providerUrl(false);
-      url.searchParams.set("start_date", start < `${referenceYear}-01-01` ? `${referenceYear}-01-01` : start);
-      url.searchParams.set("end_date", end > `${referenceYear}-12-31` ? `${referenceYear}-12-31` : end);
-      return load(url, false, signal);
+      // Fetch UTC days around the local day, then use only its actual hours.
+      // This also preserves the last hour of historical 25-hour autumn days.
+      url.searchParams.set("start_date", new Date(start).toISOString().slice(0, 10));
+      url.searchParams.set("end_date", new Date(end - 1).toISOString().slice(0, 10));
+      const data = await load(url, false, signal);
+      const indices = new Map(data.hourly.time.map((time, i) => [time, i]));
+      const hours: Features[][] = Array.from({ length: 24 }, () => []);
+      for (let time = start; time < end; time += HOUR) {
+        hours[Number(localParts(time).hour)].push(features(data, indices.get(time / 1000), false));
+      }
+      // A repeated hour gets one mean per year; a skipped DST hour has no sample.
+      return hours.map(rows => rows.length ? average(rows) : undefined);
     }));
-    const buckets: number[][] = Array.from({ length: 24 }, () => []);
-    for (const data of readings) {
-      const coveredHours = new Set<number>();
-      data.hourly.time.forEach((time, i) => {
-        const temp = data.hourly.temperature_2m[i];
-        if (finite(temp)) {
-          const hour = Number(localParts(time * 1000).hour);
-          buckets[hour].push(temp);
-          coveredHours.add(hour);
-        }
-      });
-      if (coveredHours.size !== 24) throw new Error("Incomplete historical temperatures");
-    }
-    return buckets.map(values => Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 10) / 10);
+    return Array.from({ length: 24 }, (_, hour) => average(
+      profiles.map(profile => profile[hour]).filter((value): value is Features => value !== undefined),
+    ));
   }
 
   return async function GET(request: Request): Promise<Response> {
     const params = new URL(request.url).searchParams;
     const date = params.get("date");
-    const rain = params.get("rain");
     const today = localDate(now().getTime());
     if (params.getAll("date").length !== 1 || !date || !isCalendarDate(date) || date < today) {
       return Response.json({ error: "Supply one valid date in YYYY-MM-DD format, today or later in Vancouver." }, { status: 400 });
     }
-    if (params.getAll("rain").length > 1 || (rain !== null && rain !== "true" && rain !== "false")) {
-      return Response.json({ error: "rain must be true or false, supplied once." }, { status: 400 });
+    if ([...params.keys()].some(key => key !== "date")) {
+      return Response.json({ error: "Only date is accepted. Weather source and the three-year history are selected automatically." }, { status: 400 });
     }
-    const simulation = rain !== null;
-    if (!simulation && date > addDays(today, 15)) return rainChoice();
+    const historical = date > addDays(today, 15);
+    const currentYear = Number(today.slice(0, 4));
+    const years = historical ? Array.from({ length: HISTORY_YEARS }, (_, i) => currentYear - HISTORY_YEARS + i) : [];
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const start = midnight(date);
       const end = midnight(addDays(date, 1));
       const weather: Slot[] = [];
-      if (simulation) {
-        const temperatures = await historicalTemperatures(date, Number(today.slice(0, 4)), controller.signal);
+      if (historical) {
+        const hourly = await historicalFeatures(date, years, controller.signal);
         for (let time = start; time < end; time += HOUR / 2) {
-          weather.push({ time: new Date(time).toISOString(), rain: rain === "true", temp_c: temperatures[Number(localParts(time).hour)] });
+          weather.push(slot(time, hourly[Number(localParts(time).hour)]));
         }
       } else {
         const url = providerUrl(true);
         url.searchParams.set("start_date", today);
         url.searchParams.set("end_date", addDays(today, 15));
-        url.searchParams.set("precipitation_unit", "mm");
         const data = await load(url, true, controller.signal);
         const indices = new Map(data.hourly.time.map((time, i) => [time, i]));
         for (let time = start; time < end; time += HOUR / 2) {
-          const i = indices.get(Math.floor(time / HOUR) * 3600);
-          if (i === undefined) return rainChoice();
-          const temp = data.hourly.temperature_2m[i];
-          const rainfall = data.hourly.rain?.[i];
-          const showers = data.hourly.showers?.[i];
-          if (!finite(temp) || !finite(rainfall) || !finite(showers)) return rainChoice();
-          weather.push({ time: new Date(time).toISOString(), rain: rainfall + showers > 0, temp_c: temp });
+          weather.push(slot(time, features(data, indices.get(Math.floor(time / HOUR) * 3600), true)));
         }
       }
       return Response.json({
-        date, mode: simulation ? "simulation" : "forecast",
-        temperature_source: simulation ? "historical_average" : "forecast",
-        start_time: weather[0].time, n_slots: weather.length, slot_minutes: 30, weather,
+        date, timezone: TIMEZONE, mode: historical ? "historical_average" : "forecast", years_used: years,
+        start_time: weather[0].time, n_slots: weather.length, slot_minutes: 30, source_interval_minutes: 60, weather,
       });
     } catch {
       return Response.json({ error: "Weather data is unavailable. Please try again later." }, { status: 503 });
