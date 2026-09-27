@@ -105,7 +105,7 @@ curl 'http://localhost:3000/api/weather?date=2027-06-30'
 - **Today through 15 days ahead:** one [Open-Meteo forecast](https://open-meteo.com/en/docs) request supplies the requested day's weather.
 - **Beyond that window:** three parallel [historical weather](https://open-meteo.com/en/docs/historical-weather-api) requests supply the same month/day and Vancouver local hour from the last three completed calendar years. Each numeric field is averaged across those years. The year count is hardcoded to `HISTORY_YEARS = 3` in `lib/weather.ts`; there is no surrounding-day averaging or checkbox input.
 
-Both modes return the same shape. Example values below are illustrative; only the first two of 48 entries are shown:
+Both modes return **48 rows at 30-minute intervals**, with `time_local` running from **00:00 through 23:30 on the requested Vancouver date**. Hourly weather values are duplicated into each pair of rows. Example values below are illustrative; only the first two of 48 entries are shown:
 
 ```json
 {

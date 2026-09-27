@@ -190,3 +190,28 @@ test("a skipped historical DST hour uses available years and a repeated hour giv
   assert.equal(fall.status, 200);
   assert.equal((await fall.json()).weather[2].temp_c, 30); // (2023:30 + 2024:(20+80)/2 + 2025:10) / 3.
 });
+
+
+test("both modes return all 48 local half-hour timestamps from 00:00 through 23:30", async () => {
+  const handler = createWeatherHandler({ now, fetchImpl: async input => {
+    const url = new URL(String(input));
+    return Response.json(url.hostname === "api.open-meteo.com" ? weather() : archive(url));
+  } });
+  for (const date of ["2026-09-27", "2027-06-30", "2027-01-01"]) {
+    const response = await handler(request(`?date=${date}`));
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.n_slots, 48);
+    assert.equal(body.weather.length, 48);
+    assert.equal(body.slot_minutes, 30);
+    const expected = Array.from({ length: 48 }, (_, i) =>
+      `${date}T${String(Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}:00-07:00`);
+    assert.deepEqual(body.weather.map((row: { time_local: string }) => row.time_local), expected);
+    assert.deepEqual(body.weather.map((row: { time: string }) => row.time), expected.map(time => new Date(time).toISOString()));
+    for (let i = 0; i < 48; i += 2) {
+      for (const feature of ["rain", "temp_c", "precip_mm", "rain_mm"]) {
+        assert.equal(body.weather[i][feature], body.weather[i + 1][feature]);
+      }
+    }
+  }
+});
