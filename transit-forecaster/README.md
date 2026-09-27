@@ -79,42 +79,44 @@ curl 'http://localhost:3000/api/day-of-week?date=2026-10-10'
 
 ## Weather API
 
-No API key or new environment variables are required. Weather is fixed to the Waterfront area of downtown Vancouver (49.286, -123.111).
+No API key or new environment variables are required. Location is fixed to the Waterfront area of downtown Vancouver (49.286, -123.111). The only input is one real `YYYY-MM-DD` date, today or later in Vancouver.
 
 ```sh
-# Automatic forecast: use a date from today through 15 days ahead.
 curl 'http://localhost:3000/api/weather?date=2026-09-27'
-
-# Simulation: checked checkbox = true, unchecked = false.
-curl 'http://localhost:3000/api/weather?date=2027-06-30&rain=true'
+curl 'http://localhost:3000/api/weather?date=2027-06-30'
 ```
 
-Supply one real `YYYY-MM-DD` date, today or later in Vancouver. Without `rain`, the endpoint makes one [Open-Meteo forecast](https://open-meteo.com/en/docs) request covering the 16-day window, then selects the requested day. A date outside that window, or incomplete forecast readings, returns **422** with `requires_rain_choice: true`: show the rain checkbox and resubmit with an explicit `rain=true` or `rain=false`. Either value explicitly selects simulation, including within the forecast window. Invalid or repeated parameters return 400; provider failures and timeouts return 503.
+- **Today through 15 days ahead:** one [Open-Meteo forecast](https://open-meteo.com/en/docs) request supplies the requested day's weather.
+- **Beyond that window:** three parallel [historical weather](https://open-meteo.com/en/docs/historical-weather-api) requests supply the same month/day and Vancouver local hour from the last three completed calendar years. Each numeric field is averaged across those years. The year count is hardcoded to `HISTORY_YEARS = 3` in `lib/weather.ts`; there is no surrounding-day averaging or checkbox input.
 
-Successful responses have this shape (weather array shortened):
+Both modes return the same shape. Example values below are illustrative; only the first two of 48 entries are shown:
 
 ```json
 {
   "date": "2027-06-30",
-  "mode": "simulation",
-  "temperature_source": "historical_average",
+  "timezone": "America/Vancouver",
+  "mode": "historical_average",
+  "years_used": [2023, 2024, 2025],
   "start_time": "2027-06-30T07:00:00.000Z",
-  "n_slots": 48,
   "slot_minutes": 30,
+  "source_interval_minutes": 60,
+  "n_slots": 48,
   "weather": [
-    { "time": "2027-06-30T07:00:00.000Z", "rain": true, "temp_c": 16.2 },
-    { "time": "2027-06-30T07:30:00.000Z", "rain": true, "temp_c": 16.2 }
+    { "time": "2027-06-30T07:00:00.000Z", "time_local": "2027-06-30T00:00:00-07:00", "rain": true, "temp_c": 15.8, "precip_mm": 0.3, "rain_mm": 0.3 },
+    { "time": "2027-06-30T07:30:00.000Z", "time_local": "2027-06-30T00:30:00-07:00", "rain": true, "temp_c": 15.8, "precip_mm": 0.3, "rain_mm": 0.3 }
   ]
 }
 ```
 
-Forecast responses use `mode: "forecast"` and `temperature_source: "forecast"`. Simulation uses the selected rain flag for every slot. Temperature is a seasonal estimate: three parallel [historical weather](https://open-meteo.com/en/docs/historical-weather-api) requests for the last three completed calendar years, using the target month/day plus or minus seven days. Readings are averaged by Vancouver local hour and rounded to 0.1°C. Windows are clipped to each reference year; February 29 maps to February 28 in non-leap years. This is a scenario, not a long-range weather forecast.
+Forecast responses use `mode: "forecast"` and `years_used: []`. `temp_c` is Celsius, `precip_mm` includes all precipitation (including snow's water equivalent), and `rain_mm` is liquid rainfall including showers. Forecast rainfall uses `rain + showers`; archive `rain` already includes showers. `rain` is `rain_mm > 0`, evaluated after historical averaging. A true historical flag indicates a nonzero average; it is not a probability or majority vote.
 
-Each hourly temperature and rain flag is repeated for its two half-hour slots. Forecast rain means hourly `rain + showers > 0` mm; snow alone does not set rain. Open-Meteo rainfall describes the preceding hour, so this flag is an hourly proxy. These are explicit defaults, **not yet verified against the Databricks preparation code**: training must use the same coordinates, rainfall rule, units, and hourly-to-half-hour conversion. Adjust `lib/weather.ts` if training differs.
+**Each hourly reading is repeated at :00 and :30.** `precip_mm` and `rain_mm` retain the provider's preceding-hour totals. They are not separate 30-minute accumulation amounts and must not be summed across duplicated rows. These conversion rules and coordinates must match the Databricks preparation code; that alignment has not yet been verified. Historical averages are seasonal estimates, not forecasts of a specific future day's weather.
 
-The `weather` entries match the planned model fields: `{time, rain, temp_c}`. Times are UTC instants for the selected Vancouver calendar day. Vancouver stays on UTC-7 after [March 8, 2026](https://news.gov.bc.ca/releases/2026AG0013-000209), so future days have 48 slots. The endpoint explicitly applies this rule even on older Node/provider timezone data, while preserving historical offsets when averaging past temperatures. Historical transition-day handling can produce 46 or 50 slots; any 50-slot response would need splitting for the model plan's 48-slot limit. The forecast/model orchestration and frontend checkbox are not part of this endpoint.
+`time` is UTC for model integration; `time_local` includes Vancouver's UTC offset. Vancouver stays on UTC-7 after [March 8, 2026](https://news.gov.bc.ca/releases/2026AG0013-000209), so future days contain 48 rows. Historical averaging preserves the older timezone rules: repeated autumn hours are averaged within each year before averaging years; a spring hour that never occurred uses the other years' readings. February 29 maps to February 28 only in non-leap reference years.
 
-Forecast responses are cached for 15 minutes and historical responses for 24 hours (up to 64 provider responses per server process). Changing the rain checkbox reuses cached temperatures. Requests have a shared ten-second deadline with no retries. Missing temperatures or rain readings are never replaced with zero or dry weather.
+Invalid, repeated, past dates or additional parameters (including the old `rain` and `n_years`) return **400**. Provider failures, timeouts, or missing required readings return **503**, with no fabricated values or silent switch of source. The former 422 checkbox response is removed.
+
+Complete provider responses are cached for 15 minutes (forecast) or 24 hours (archive), up to 64 responses per server process. Requests share a ten-second deadline with no retries.
 
 ## Checks
 
