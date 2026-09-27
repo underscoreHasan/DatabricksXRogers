@@ -61,6 +61,22 @@ A negative result means no qualifying event in these venues within the checked T
 
 Lookups fetch at most five pages of 100 within ten seconds, with no retries. Complete results are cached for 15 minutes, up to 128 dates per server process; simultaneous requests for the same date share one lookup. Partial results and failures are not cached. This in-memory cache is intentionally simple and is not shared between deployed instances.
 
+## Day-of-week API
+
+```sh
+curl 'http://localhost:3000/api/day-of-week?date=2026-10-10'
+```
+
+```json
+{
+  "date": "2026-10-10",
+  "dayOfWeek": "Saturday",
+  "dayOfWeekNumber": 6
+}
+```
+
+`dayOfWeekNumber` uses Monday = 1 through Sunday = 7. Supply the local calendar date as `YYYY-MM-DD`; the calculation does not shift that date into another timezone. Past and future dates are supported for training and forecasting. Missing, repeated, malformed, or impossible dates return HTTP 400. This endpoint computes locally and needs no API key or external request.
+
 ## Checks
 
 ```sh
