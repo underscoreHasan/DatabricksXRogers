@@ -77,6 +77,45 @@ curl 'http://localhost:3000/api/day-of-week?date=2026-10-10'
 
 `dayOfWeekNumber` uses Monday = 1 through Sunday = 7. Supply the local calendar date as `YYYY-MM-DD`; the calculation does not shift that date into another timezone. Past and future dates are supported for training and forecasting. Missing, repeated, malformed, or impossible dates return HTTP 400. This endpoint computes locally and needs no API key or external request.
 
+## Weather API
+
+No API key or new environment variables are required. Weather is fixed to the Waterfront area of downtown Vancouver (49.286, -123.111).
+
+```sh
+# Automatic forecast: use a date from today through 15 days ahead.
+curl 'http://localhost:3000/api/weather?date=2026-09-27'
+
+# Simulation: checked checkbox = true, unchecked = false.
+curl 'http://localhost:3000/api/weather?date=2027-06-30&rain=true'
+```
+
+Supply one real `YYYY-MM-DD` date, today or later in Vancouver. Without `rain`, the endpoint makes one [Open-Meteo forecast](https://open-meteo.com/en/docs) request covering the 16-day window, then selects the requested day. A date outside that window, or incomplete forecast readings, returns **422** with `requires_rain_choice: true`: show the rain checkbox and resubmit with an explicit `rain=true` or `rain=false`. Either value explicitly selects simulation, including within the forecast window. Invalid or repeated parameters return 400; provider failures and timeouts return 503.
+
+Successful responses have this shape (weather array shortened):
+
+```json
+{
+  "date": "2027-06-30",
+  "mode": "simulation",
+  "temperature_source": "historical_average",
+  "start_time": "2027-06-30T07:00:00.000Z",
+  "n_slots": 48,
+  "slot_minutes": 30,
+  "weather": [
+    { "time": "2027-06-30T07:00:00.000Z", "rain": true, "temp_c": 16.2 },
+    { "time": "2027-06-30T07:30:00.000Z", "rain": true, "temp_c": 16.2 }
+  ]
+}
+```
+
+Forecast responses use `mode: "forecast"` and `temperature_source: "forecast"`. Simulation uses the selected rain flag for every slot. Temperature is a seasonal estimate: three parallel [historical weather](https://open-meteo.com/en/docs/historical-weather-api) requests for the last three completed calendar years, using the target month/day plus or minus seven days. Readings are averaged by Vancouver local hour and rounded to 0.1°C. Windows are clipped to each reference year; February 29 maps to February 28 in non-leap years. This is a scenario, not a long-range weather forecast.
+
+Each hourly temperature and rain flag is repeated for its two half-hour slots. Forecast rain means hourly `rain + showers > 0` mm; snow alone does not set rain. Open-Meteo rainfall describes the preceding hour, so this flag is an hourly proxy. These are explicit defaults, **not yet verified against the Databricks preparation code**: training must use the same coordinates, rainfall rule, units, and hourly-to-half-hour conversion. Adjust `lib/weather.ts` if training differs.
+
+The `weather` entries match the planned model fields: `{time, rain, temp_c}`. Times are UTC instants for the selected Vancouver calendar day. Vancouver stays on UTC-7 after [March 8, 2026](https://news.gov.bc.ca/releases/2026AG0013-000209), so future days have 48 slots. The endpoint explicitly applies this rule even on older Node/provider timezone data, while preserving historical offsets when averaging past temperatures. Historical transition-day handling can produce 46 or 50 slots; any 50-slot response would need splitting for the model plan's 48-slot limit. The forecast/model orchestration and frontend checkbox are not part of this endpoint.
+
+Forecast responses are cached for 15 minutes and historical responses for 24 hours (up to 64 provider responses per server process). Changing the rain checkbox reuses cached temperatures. Requests have a shared ten-second deadline with no retries. Missing temperatures or rain readings are never replaced with zero or dry weather.
+
 ## Checks
 
 ```sh
