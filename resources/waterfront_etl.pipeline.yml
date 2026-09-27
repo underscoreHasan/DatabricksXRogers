@@ -1,0 +1,19 @@
+resources:
+  pipelines:
+    waterfront_etl:
+      name: waterfront-model-v1
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      serverless: true
+      photon: true
+      development: false
+      channel: CURRENT
+      edition: ADVANCED
+      root_path: ../pipelines/waterfront
+      libraries:
+        - glob:
+            include: ../pipelines/waterfront/**
+
+      configuration:
+        bronze_path: /Volumes/workspace/default/databricksxrogers/provided_datasets/*.csv
+        weather_path: /Volumes/workspace/default/databricksxrogers/external/ext_weather_hourly.csv

@@ -145,6 +145,25 @@ Invalid, repeated, past dates or additional parameters (including the old `rain`
 
 Complete provider responses are cached for 15 minutes (forecast) or 24 hours (archive), up to 64 responses per server process. Requests share a ten-second deadline with no retries.
 
+## Crowd forecast API
+
+`POST /api/forecast` validates the [serving contract](../docs/api/API_CONTRACT.md) and forwards a valid payload to Databricks Model Serving. Copy `DATABRICKS_HOST` and `DATABRICKS_TOKEN` into `.env.local` (see `.env.example`).
+
+```sh
+curl -s -X POST 'http://localhost:3000/api/forecast' \
+  -H 'Content-Type: application/json' \
+  -d '{"dataframe_records": [{"date": "2026-09-12"}]}'
+```
+
+Missing or invalid `date` returns **400** before Databricks is called. A missing token, a cold/failed endpoint, or an unexpected payload returns **503**. The dummy model lives at `workspace.databricksxrogers.waterfront_crowd_forecast` behind endpoint `waterfront-crowd-forecast`. Point that endpoint at a new version to swap in the real model; this route does not change.
+
+Register or refresh the dummy:
+
+```sh
+databricks bundle deploy
+databricks bundle run register_dummy_forecast
+```
+
 ## Checks
 
 ```sh

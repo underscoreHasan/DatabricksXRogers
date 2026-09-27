@@ -6,6 +6,8 @@
 /scripts/
 /databricks/
 /analysis_outputs/
+__pycache__/
+*.pyc
 
 # Next.js and Node.js
 /node_modules/

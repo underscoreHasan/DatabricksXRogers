@@ -1,0 +1,28 @@
+bundle:
+  name: waterfront-forecast
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: workspace
+  schema:
+    default: databricksxrogers
+
+sync:
+  exclude:
+    - transit-forecaster
+    - provided_datasets
+    - docs
+    - model/events/held_large_event_occurrences.csv
+    - "*.csv"
+    - .git
+    - .next
+    - node_modules
+
+targets:
+  prod:
+    default: true
+    workspace:
+      host: https://dbc-fff97889-921e.cloud.databricks.com

@@ -1,0 +1,18 @@
+resources:
+  pipelines:
+    translink_gtfs:
+      name: translink-gtfs
+      catalog: ${var.catalog}
+      schema: translink
+      serverless: true
+      photon: true
+      development: false
+      channel: CURRENT
+      edition: ADVANCED
+      root_path: ../pipelines/translink
+      libraries:
+        - glob:
+            include: ../pipelines/translink/**
+
+      configuration:
+        gtfs_glob: /Volumes/workspace/default/databricksxrogers/external/translink/gtfs/snapshots
