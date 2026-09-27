@@ -19,24 +19,26 @@ export function DatePicker({ date, onChange }: DatePickerProps) {
   return (
     <div className="flex items-center gap-2">
       <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "w-[220px] justify-start text-left font-normal",
-              !date && "text-muted-foreground"
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {format(date, "EEEE, MMM d, yyyy")}
-          </Button>
-        </PopoverTrigger>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[220px] justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {format(date, "EEEE, MMM d, yyyy")}
+            </Button>
+          }
+        />
         <PopoverContent className="w-auto p-0" align="end">
           <Calendar
             mode="single"
             selected={date}
             onSelect={(d) => d && onChange(d)}
-            initialFocus
+            autoFocus
           />
         </PopoverContent>
       </Popover>

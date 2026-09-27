@@ -45,7 +45,7 @@ export function DeviationChart({ insights }: { insights: DayInsights }) {
   const [hasHovered, setHasHovered] = useState(false);
 
   return (
-    <Card>
+    <Card className="flex-1">
       <CardHeader>
         <CardTitle className="text-base font-semibold">Deviation from typical, by hour</CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -55,7 +55,7 @@ export function DeviationChart({ insights }: { insights: DayInsights }) {
         </p>
       </CardHeader>
       <CardContent>
-        <div className="h-[260px]" onMouseEnter={() => setHasHovered(true)}>
+        <div className="min-h-[280px]" onMouseEnter={() => setHasHovered(true)}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={hourly} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
               <defs>

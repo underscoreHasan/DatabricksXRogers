@@ -21,7 +21,7 @@ export function InsightsGrid({ insights }: { insights: DayInsights }) {
         <CardTitle className="text-base font-semibold">What&apos;s driving this day</CardTitle>
         <p className="text-sm text-muted-foreground">Known context that may explain the pattern above.</p>
       </CardHeader>
-      <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <CardContent className="flex flex-col gap-3 min-w-[300px]">
         {items.map((item) => (
           <div key={item.k} className="rounded-lg bg-muted/50 p-3">
             <p className="text-xs text-muted-foreground mb-1">{item.k}</p>
