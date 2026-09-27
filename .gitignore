@@ -2,7 +2,24 @@
 .env
 .env.*
 
-# Only TEAM-BRIEF.md and provided_datasets/ are meant for this repo
+# Local data and analysis artifacts
 /scripts/
 /databricks/
 /analysis_outputs/
+
+# Next.js and Node.js
+/node_modules/
+/.next/
+/out/
+/build/
+/coverage/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vercel/
+
+# Allow a documented environment template
+!.env.example
