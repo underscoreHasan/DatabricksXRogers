@@ -77,6 +77,22 @@ curl 'http://localhost:3000/api/day-of-week?date=2026-10-10'
 
 `dayOfWeekNumber` uses Monday = 1 through Sunday = 7. Supply the local calendar date as `YYYY-MM-DD`; the calculation does not shift that date into another timezone. Past and future dates are supported for training and forecasting. Missing, repeated, malformed, or impossible dates return HTTP 400. This endpoint computes locally and needs no API key or external request.
 
+## Holiday API
+
+```sh
+curl 'http://localhost:3000/api/holiday?date=2027-07-01'
+```
+
+```json
+{ "date": "2027-07-01", "isHoliday": true }
+```
+
+Checks B.C. statutory holiday calendar dates for Vancouver using the free [Canada Holidays API](https://canada-holidays.ca/api). No API key, environment variables, or new dependencies are needed. It requests the supplied date's year, so upcoming years work without maintaining a yearly list. The provider supports 2013 through 2038.
+
+Supply one local calendar date as `YYYY-MM-DD`. Ordinary days return `isHoliday: false`. Optional holidays (including Easter Monday and Boxing Day) and substitute/observed days off are excluded; Christmas 2027 is true on December 25 and false on December 27. This is a holiday-date flag, not an employer or transit operating schedule.
+
+Missing, repeated, malformed, impossible, or out-of-range dates return 400. Provider failures return 503 with an error, never a misleading false. Yearly provider responses use Next.js's 24-hour fetch cache and a five-second timeout.
+
 ## Weather API
 
 No API key or new environment variables are required. Location is fixed to the Waterfront area of downtown Vancouver (49.286, -123.111). The only input is one real `YYYY-MM-DD` date, today or later in Vancouver.
