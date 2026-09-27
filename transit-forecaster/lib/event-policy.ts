@@ -51,7 +51,7 @@ export function localDate(date: Date): string {
 }
 
 
-export function parseDate(values: string[], now = new Date()): string | null {
-  if (values.length !== 1 || !isCalendarDate(values[0]) || values[0] < localDate(now)) return null;
+export function parseDate(values: string[]): string | null {
+  if (values.length !== 1 || !isCalendarDate(values[0])) return null;
   return values[0];
 }

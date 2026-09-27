@@ -27,7 +27,7 @@ Copy `.env.example` to `.env.local`, set `TICKETMASTER_API_KEY` to your Ticketma
 curl 'http://localhost:3000/api/events?date=2026-10-10'
 ```
 
-The only input is a real `YYYY-MM-DD` date, today or later in `America/Vancouver`. Missing, repeated, impossible, or past dates return 400. This endpoint is for forecasts; Discovery is not a historical training-data archive.
+The only input is a real `YYYY-MM-DD` date, including dates before today. Missing, repeated, or impossible dates return 400. Ticketmaster Discovery may drop listings after they expire, so a past date can come back with no event even when one happened.
 
 ```json
 {

@@ -5,18 +5,18 @@ import { selectEvent } from "../lib/ticketmaster.ts";
 import { fixture, venue } from "./fixtures.ts";
 
 const day = "2026-10-10";
-const now = new Date("2026-09-27T02:00:00Z"); // Still September 26 in Vancouver.
 const select = (records: unknown[], date = day) => selectEvent(records, date).event;
 const at = (start: string, end?: Record<string, unknown>) => fixture({ dates: { start: { dateTime: start }, end, status: { code: "onsale" } } });
 
-test("accepts today in Vancouver even when UTC has advanced", () => {
-  assert.equal(parseDate(["2026-09-26"], now), "2026-09-26");
-  assert.equal(parseDate(["2028-02-29"], now), "2028-02-29");
+test("accepts past, current, and future calendar dates", () => {
+  assert.equal(parseDate(["2000-01-01"]), "2000-01-01");
+  assert.equal(parseDate(["2026-09-25"]), "2026-09-25");
+  assert.equal(parseDate(["2028-02-29"]), "2028-02-29");
 });
 
-test("rejects missing, duplicate, malformed, impossible and past dates", () => {
-  for (const values of [[], [day, day], [""], ["2026-2-01"], ["2026-02-30"], ["2027-02-29"], ["2026-09-25"], ["2026-10-10T00:00:00Z"], [" 2026-10-10"]]) {
-    assert.equal(parseDate(values, now), null, JSON.stringify(values));
+test("rejects missing, duplicate, malformed and impossible dates", () => {
+  for (const values of [[], [day, day], [""], ["2026-2-01"], ["2026-02-30"], ["2027-02-29"], ["2026-10-10T00:00:00Z"], [" 2026-10-10"]]) {
+    assert.equal(parseDate(values), null, JSON.stringify(values));
   }
 });
 
