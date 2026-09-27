@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Forecast input API tester</title>
+  <script type="module" src="./js/api-check.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #eef2f5; color: #182b3d; font: 15px/1.5 system-ui, sans-serif; }
+    main { max-width: 1120px; margin: auto; padding: 28px 20px; }
+    a { color: #245fd2; overflow-wrap: anywhere; }
+    h1 { margin: 16px 0 4px; font-size: 28px; } h2 { margin: 0; font-size: 19px; }
+    p { margin: 8px 0 16px; } .muted { color: #536678; font-size: 13px; }
+    form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 24px 0 10px; }
+    label { display: grid; gap: 5px; font-weight: 600; }
+    input, button { font: inherit; border-radius: 8px; padding: 10px 14px; min-height: 44px; }
+    input { border: 1px solid #acbac7; background: white; color: #182b3d; }
+    button { border: 0; background: #245fd2; color: white; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: default; }
+    :focus-visible { outline: 3px solid #a75316; outline-offset: 3px; }
+    #download { background: #e0e7ef; color: #182b3d; }
+    #results { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+    article, #weather-section { background: white; padding: 20px; border: 1px solid #dae2e9; border-radius: 12px; min-width: 0; }
+    article header { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+    .badge { border-radius: 6px; padding: 3px 8px; background: #e8edf2; font-size: 12px; white-space: nowrap; }
+    [data-state="ok"] .badge { background: #e0f2e9; color: #145a37; }
+    [data-state="partial"] .badge { background: #fff0d3; color: #724a00; }
+    [data-state="error"] .badge { background: #ffe5e3; color: #8d241c; }
+    .summary { white-space: pre-line; overflow-wrap: anywhere; }
+    details { margin-top: 16px; } summary { cursor: pointer; font-weight: 600; }
+    pre { background: #f4f7fa; padding: 12px; border-radius: 6px; overflow: auto; max-height: 320px; font-size: 12px; }
+    #weather-section { margin-top: 20px; } .table-scroll { overflow: auto; max-height: 540px; }
+    table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid #e6ebf0; white-space: nowrap; }
+    th { position: sticky; top: 0; background: #f4f7fa; font-size: 13px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<main>
+  <a href="./index.html">← Back to Waterfront</a>
+  <h1>Forecast input API tester</h1>
+  <p>Choose a Vancouver date to inspect weather, events, weekday, and holiday inputs before running a forecast.</p>
+  <form id="check-form">
+    <label for="check-date">Date<input id="check-date" type="date" required aria-describedby="date-help"></label>
+    <button id="run" type="submit">Test APIs</button>
+    <button id="download" type="button" disabled>Download JSON</button>
+  </form>
+  <p id="date-help" class="muted">Use today or a future date for all APIs. Weather rejects past dates and uses a three-year historical average beyond 15 days ahead. Holidays cover 2013–2038.</p>
+  <p id="status" role="status" aria-live="polite">Ready. No forecast or model request will be made.</p>
+  <div id="results" aria-label="API results"></div>
+  <section id="weather-section" hidden aria-labelledby="weather-heading">
+    <h2 id="weather-heading">Weather inputs · all 48 intervals</h2>
+    <p id="weather-meta" class="muted"></p>
+    <p class="muted">Hourly readings repeat at :00 and :30. Precipitation and rainfall are hourly amounts; do not add the duplicated rows together.</p>
+    <div class="table-scroll"><table>
+      <thead><tr><th scope="col">Vancouver time</th><th scope="col">UTC</th><th scope="col">Rain</th><th scope="col">Temp °C</th><th scope="col">Precip mm</th><th scope="col">Rain mm</th></tr></thead>
+      <tbody id="weather-rows"></tbody>
+    </table></div>
+  </section>
+  <p class="muted">These are API responses for inspecting candidate model inputs, before model-specific encoding. Backend caches still apply. An incomplete lookup is unknown, not false. Events returns one selected qualifying event.</p>
+  <noscript>Enable JavaScript to run the API checks.</noscript>
+</main>
+</body>
+</html>

@@ -1,0 +1,76 @@
+#waterfront-day-preview{--dp-bg:light-dark(#ffffff,#151b22);--dp-panel:light-dark(#f4f7fa,#202933);--dp-text:light-dark(#182b3d,#edf3f8);--dp-sub:light-dark(#536678,#b5c3ce);--dp-line:light-dark(#dae2e9,#384653);--dp-blue:light-dark(#245fd2,#8db7ff);--dp-soft:light-dark(#dce8ff,#263c60);--dp-block:light-dark(#e3e9ed,#2d3945);--dp-road:light-dark(#b7c4ce,#516270);--dp-orange:light-dark(#a75316,#efb175);font-family:Inter,system-ui,sans-serif;color:var(--dp-text);font-size:14px;line-height:1.45;background:var(--dp-bg);border-radius:16px;overflow:hidden;border:1px solid var(--dp-line)}
+    #waterfront-day-preview *{box-sizing:border-box}
+    #waterfront-day-preview h2,#waterfront-day-preview h3,#waterfront-day-preview p{margin:0;font-weight:400}
+    #waterfront-day-preview h2{font-size:21px;font-weight:500;letter-spacing:-.5px}
+    #waterfront-day-preview h3{font-size:14px;font-weight:500}
+    #waterfront-day-preview .dp-small{font-size:12px;color:var(--dp-sub)}
+    #waterfront-day-preview .dp-top{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:21px 24px;flex-wrap:wrap}
+    #waterfront-day-preview .dp-kicker{color:var(--dp-sub);font-size:12px;margin-bottom:3px}
+    #waterfront-day-preview label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--dp-sub)}
+    #waterfront-day-preview input[type=date]{font:inherit;font-size:14px;color:var(--dp-text);background:var(--dp-bg);padding:8px 10px;border:1px solid var(--dp-line);border-radius:8px;max-width:100%}
+    #waterfront-day-preview .dp-demo{padding:8px 24px;background:var(--dp-panel);color:var(--dp-sub);font-size:12px;border-block:1px solid var(--dp-line)}
+    #waterfront-day-preview .dp-main{display:grid;grid-template-columns:minmax(0,1fr) 260px}
+    #waterfront-day-preview .dp-map-wrap{position:relative;min-width:0}
+    #waterfront-day-preview #dp-map{display:block;width:100%;height:310px;background:var(--dp-bg)}
+    #waterfront-day-preview .dp-map-key{padding:9px 16px 5px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;color:var(--dp-sub);font-size:12px}
+    #waterfront-day-preview .dp-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--dp-blue);margin-right:5px}
+    #waterfront-day-preview .dp-ring{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px dashed var(--dp-sub);margin-right:5px}
+    #waterfront-day-preview .dp-map-credit{padding:0 16px 12px;font-size:11px;color:var(--dp-sub)}
+    #waterfront-day-preview .dp-map-credit a{color:inherit;text-decoration:underline}
+    #waterfront-day-preview .dp-side{padding:20px;border-left:1px solid var(--dp-line)}
+    #waterfront-day-preview #dp-time{font-size:20px;font-weight:500;margin:3px 0 13px;font-variant-numeric:tabular-nums}
+    #waterfront-day-preview #dp-value{font-size:32px;letter-spacing:-1px;font-variant-numeric:tabular-nums;font-weight:500}
+    #waterfront-day-preview #dp-delta{margin:4px 0 18px;font-size:13px}
+    #waterfront-day-preview .dp-contrib{display:flex;justify-content:space-between;gap:12px;margin-top:13px;font-size:13px}
+    #waterfront-day-preview .dp-contrib .dp-amount{font-variant-numeric:tabular-nums;white-space:nowrap}
+    #waterfront-day-preview .dp-tag{font-size:11px;color:var(--dp-sub);margin-top:2px}
+    #waterfront-day-preview .dp-playback{border-top:1px solid var(--dp-line);padding:18px 24px 21px}
+    #waterfront-day-preview .dp-timeline-head{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
+    #waterfront-day-preview .dp-legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--dp-sub)}
+    #waterfront-day-preview .dp-dashed{display:inline-block;width:17px;border-top:2px dashed var(--dp-sub);vertical-align:middle;margin-right:5px}
+    #waterfront-day-preview .dp-solid{display:inline-block;width:17px;border-top:2px solid var(--dp-blue);vertical-align:middle;margin-right:5px}
+    #waterfront-day-preview #dp-chart{width:100%;height:170px;display:block;touch-action:pan-y}
+    #waterfront-day-preview .dp-controls{display:flex;align-items:center;gap:13px}
+    #waterfront-day-preview .dp-controls button{font:inherit;background:var(--dp-text);color:var(--dp-bg);padding:9px 13px;border:0;border-radius:8px;min-width:75px}
+    #waterfront-day-preview .dp-slider-block{flex:1;min-width:0}
+    #waterfront-day-preview .dp-slider-head{display:flex;justify-content:space-between;color:var(--dp-sub);font-size:12px;gap:10px}
+    #waterfront-day-preview input[type=range]{width:100%;accent-color:var(--dp-blue);margin:8px 0 0}
+    #waterfront-day-preview #dp-selected{font-variant-numeric:tabular-nums}
+    #waterfront-day-preview .dp-event-line{margin-top:12px;display:flex;gap:7px;flex-wrap:wrap}
+    #waterfront-day-preview .dp-event-line button{font:inherit;font-size:12px;color:var(--dp-text);background:var(--dp-panel);border:1px solid var(--dp-line);padding:6px 10px;border-radius:7px}
+    #waterfront-day-preview .dp-event-line button[aria-pressed=true]{background:var(--dp-text);color:var(--dp-bg)}
+    #waterfront-day-preview .dp-map-label{font-size:12px;fill:var(--dp-sub);paint-order:stroke;stroke:var(--dp-bg);stroke-width:4px;stroke-linejoin:round}
+    #waterfront-day-preview .dp-axis-label{font-size:11px;fill:var(--dp-sub)}
+    #waterfront-day-preview .dp-axis path,#waterfront-day-preview .dp-axis line{stroke:var(--dp-line)}
+    #waterfront-day-preview .dp-axis text{fill:var(--dp-sub);font-size:11px}
+    #waterfront-day-preview .dp-mobile-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+    @media(max-width:680px){#waterfront-day-preview .dp-main{grid-template-columns:1fr}#waterfront-day-preview .dp-side{border-left:0;border-top:1px solid var(--dp-line);display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}#waterfront-day-preview #dp-map{height:260px}#waterfront-day-preview .dp-top{padding:16px}#waterfront-day-preview .dp-demo{padding:8px 16px}#waterfront-day-preview .dp-playback{padding:16px}#waterfront-day-preview #dp-time{font-size:17px}#waterfront-day-preview #dp-value{font-size:27px}}
+    @media(max-width:380px){#waterfront-day-preview .dp-side{grid-template-columns:1fr}#waterfront-day-preview .dp-controls{gap:8px}#waterfront-day-preview .dp-slider-head{font-size:11px}}
+    @media(pointer:coarse){#waterfront-day-preview button,#waterfront-day-preview input[type=date]{min-height:44px}#waterfront-day-preview input[type=date]{font-size:16px}#waterfront-day-preview input[type=range]{height:30px}}
+
+/* Standalone page framing. The component styles above are retained from the preview. */
+:root { color-scheme: light dark; }
+body { margin: 0; padding: 28px 20px; background: light-dark(#eef2f5, #0c1218); }
+#waterfront-day-preview { max-width: 1024px; margin: 0 auto; }
+#waterfront-day-preview [hidden] { display: none !important; }
+#waterfront-day-preview .dp-demo { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 37px; }
+#waterfront-day-preview #dp-retry { font: inherit; color: var(--dp-text); background: var(--dp-bg); border: 1px solid var(--dp-line); border-radius: 6px; padding: 4px 10px; }
+#waterfront-day-preview .dp-demo[data-state="error"] { color: var(--dp-orange); }
+#waterfront-day-preview .dp-side { display: flex; flex-direction: column; gap: 17px; }
+#waterfront-day-preview #dp-delta { margin-bottom: 10px; }
+#waterfront-day-preview #dp-dwell { color: var(--dp-text); font-weight: 500; font-variant-numeric: tabular-nums; }
+#waterfront-day-preview .dp-contrib { display: block; margin-top: 11px; overflow-wrap: anywhere; }
+#waterfront-day-preview .dp-event-detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--dp-line); font-size: 12px; color: var(--dp-sub); overflow-wrap: anywhere; }
+#waterfront-day-preview .dp-event-detail a { color: var(--dp-text); }
+#waterfront-day-preview button { cursor: pointer; }
+#waterfront-day-preview button:disabled, #waterfront-day-preview input:disabled { cursor: not-allowed; opacity: .45; }
+#waterfront-day-preview button:focus-visible, #waterfront-day-preview input:focus-visible, #waterfront-day-preview a:focus-visible { outline: 2px solid var(--dp-blue); outline-offset: 3px; }
+#waterfront-day-preview .dp-chart-hit { cursor: crosshair; }
+#waterfront-day-preview .dp-chart-title { font-size: 12px; fill: var(--dp-sub); }
+@media (max-width: 680px) {
+  body { padding: 12px; }
+  #waterfront-day-preview .dp-side { display: grid; grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 380px) {
+  #waterfront-day-preview .dp-side { grid-template-columns: 1fr; }
+}

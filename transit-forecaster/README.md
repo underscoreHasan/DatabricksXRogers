@@ -11,13 +11,24 @@ npm ci
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). **Check backend** calls `GET /api/health`.
+Open [localhost:3000](http://localhost:3000) to view the Waterfront frontend. `/waterfront` also opens it. The page and existing `/api/*` routes share this dev server; no separate frontend server is needed.
 
-- `app/page.tsx` — frontend
+The frontend expects `/api/forecast`, which is not implemented yet, so it displays a setup error until that endpoint is connected.
+
+- `public/waterfront/` — frontend HTML, CSS, JavaScript, and assets
+- `next.config.ts` — homepage and `/waterfront` redirects
 - `app/api/health/route.ts` — backend
-- `app/globals.css` — styles
+- `public/waterfront/styles.css` — page styles
 
 Production: `npm run build`, then `npm start`.
+
+## Manual API tester
+
+With `npm run dev` running, use **Test input APIs** on the Waterfront page or open [the tester](http://localhost:3000/waterfront/api-check.html). Choose a date and click **Test APIs** to call weather, events, day-of-week, holiday, and health together. Each result shows its HTTP status, duration, summary, and full JSON; weather also has a 48-row table. **Download JSON** saves all results, including errors and partial lookups. The forecast endpoint is not called.
+
+Try tomorrow for forecast weather, `2027-07-01` for a holiday and historical weather, or a past date to check weather validation. Backend caches apply. This inspects the fetched inputs; the model's final feature encoding is still to be connected.
+
+Frontend checks: `npm --prefix public/waterfront test`.
 
 ## Downtown event API
 
