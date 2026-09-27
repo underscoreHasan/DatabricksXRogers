@@ -8,7 +8,7 @@ const lookup = createEventLookup({ apiKey });
 export async function GET(request: Request): Promise<Response> {
   const date = parseDate(new URL(request.url).searchParams.getAll("date"));
   if (!date) {
-    return Response.json({ error: "Provide one valid date as YYYY-MM-DD, today or later in America/Vancouver." }, { status: 400 });
+    return Response.json({ error: "Provide one valid date as YYYY-MM-DD." }, { status: 400 });
   }
   if (!apiKey) {
     return Response.json({ date, lookupStatus: "unavailable", hasHighAttendanceEvent: null, event: null,

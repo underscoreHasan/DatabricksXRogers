@@ -6,11 +6,17 @@ const { GET } = await import("../app/api/events/route.ts");
 after(() => { if (originalKey !== undefined) process.env.TICKETMASTER_API_KEY = originalKey; });
 
 test("invalid HTTP input returns 400 before checking credentials", async () => {
-  for (const query of ["", "?date=bad", "?date=2027-02-30", "?date=2000-01-01", "?date=2099-01-01&date=2099-01-01"]) {
+  for (const query of ["", "?date=bad", "?date=2027-02-30", "?date=2099-01-01&date=2099-01-01"]) {
     const response = await GET(new Request(`http://localhost/api/events${query}`));
     assert.equal(response.status, 400);
     assert.equal(typeof (await response.json()).error, "string");
   }
+});
+
+test("past dates pass validation", async () => {
+  const response = await GET(new Request("http://localhost/api/events?date=2000-01-01"));
+  assert.notEqual(response.status, 400);
+  assert.equal((await response.json()).date, "2000-01-01");
 });
 
 test("missing credentials return a descriptive safe 503 and unknown attendance", async () => {
