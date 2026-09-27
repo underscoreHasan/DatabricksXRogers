@@ -1,3 +1,6 @@
+import { isCalendarDate } from "./date.ts";
+export { isCalendarDate };
+
 export type EventSize = "small" | "medium" | "large";
 
 export type MainEvent = {
@@ -47,11 +50,6 @@ export function localDate(date: Date): string {
   return ["year", "month", "day"].map((type) => parts.find((part) => part.type === type)!.value).join("-");
 }
 
-export function isCalendarDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const timestamp = Date.parse(`${value}T00:00:00Z`);
-  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
-}
 
 export function parseDate(values: string[], now = new Date()): string | null {
   if (values.length !== 1 || !isCalendarDate(values[0]) || values[0] < localDate(now)) return null;
