@@ -1,0 +1,3 @@
+event_id,name,description,category,site_scope,default_span,is_active,source
+fifa,FIFA World Cup at BC Place,2026 World Cup match at BC Place.,sport,all,custom,true,FIFA.com / BC Place
+holiday,Public holiday,"BC statutory holiday. In this data, Waterfront is usually quieter.",civic,waterfront,all_day,true,BC statutory calendar

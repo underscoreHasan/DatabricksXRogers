@@ -1,0 +1,10 @@
+transit-forecaster
+provided_datasets
+docs
+.git
+.next
+node_modules
+*.csv
+.DS_Store
+.env
+.env.*

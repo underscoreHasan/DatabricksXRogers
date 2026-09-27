@@ -1,0 +1,8 @@
+resources:
+  jobs:
+    translink_gtfs_refresh:
+      name: translink-gtfs-refresh
+      tasks:
+        - task_key: refresh_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.translink_gtfs.id}

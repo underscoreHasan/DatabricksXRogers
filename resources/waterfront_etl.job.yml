@@ -1,0 +1,23 @@
+resources:
+  jobs:
+    waterfront_etl_refresh:
+      name: waterfront-model-v1-refresh
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: refresh_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.waterfront_etl.id}
+        - task_key: train_xgboost
+          depends_on:
+            - task_key: refresh_pipeline
+          notebook_task:
+            notebook_path: ../model/training/waterfront_xgb_forecast_dwelltime_volume.py
+          environment_key: xgb_train
+      environments:
+        - environment_key: xgb_train
+          spec:
+            environment_version: "3"
+            dependencies:
+              - xgboost>=2.0
+              - plotly
+              - matplotlib

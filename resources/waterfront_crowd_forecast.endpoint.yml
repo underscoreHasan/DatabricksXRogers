@@ -1,0 +1,11 @@
+resources:
+  model_serving_endpoints:
+    waterfront_crowd_forecast_endpoint:
+      name: waterfront-crowd-forecast
+      config:
+        served_entities:
+          - name: waterfront-crowd-forecast
+            entity_name: ${var.catalog}.${var.schema}.waterfront_crowd_forecast
+            entity_version: "1"
+            workload_size: Small
+            scale_to_zero_enabled: true

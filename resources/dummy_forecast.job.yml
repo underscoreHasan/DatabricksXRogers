@@ -1,0 +1,24 @@
+resources:
+  jobs:
+    register_dummy_forecast:
+      name: register-waterfront-dummy-forecast
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: register
+          spark_python_task:
+            python_file: ../model/serving/dummy_forecast.py
+          environment_key: dummy_forecast
+      environments:
+        - environment_key: dummy_forecast
+          spec:
+            environment_version: "3"
+            dependencies:
+              - mlflow
+              - pandas
+
+  registered_models:
+    waterfront_crowd_forecast:
+      catalog_name: ${var.catalog}
+      schema_name: ${var.schema}
+      name: waterfront_crowd_forecast
+      comment: Dummy v1 for the Waterfront crowd forecast serving contract. Log a new version and retarget the serving endpoint to swap in the real model.
