@@ -16,11 +16,11 @@ export function servingConfigured(): boolean {
   return Boolean(host() && token());
 }
 
-export async function invokeForecast(body: unknown, fetchImpl: typeof fetch = fetch): Promise<Response> {
+export async function invokeForecast(body: unknown, fetchImpl: typeof fetch = fetch, servingEndpoint = endpoint()): Promise<Response> {
   if (!servingConfigured()) {
     return Response.json({ error: "DATABRICKS_TOKEN is not configured on the server." }, { status: 503 });
   }
-  const url = `https://${host()}/serving-endpoints/${endpoint()}/invocations`;
+  const url = `https://${host()}/serving-endpoints/${encodeURIComponent(servingEndpoint)}/invocations`;
   try {
     const response = await fetchImpl(url, {
       method: "POST",
@@ -52,4 +52,10 @@ export async function invokeForecast(body: unknown, fetchImpl: typeof fetch = fe
   } catch {
     return Response.json({ error: "Databricks serving is unavailable." }, { status: 503 });
   }
+}
+
+/** Typical weekday baseline uses its own endpoint and the same serving contract. */
+export function invokeTypicalForecast(body: unknown, fetchImpl: typeof fetch = fetch): Promise<Response> {
+  const name = (process.env.DATABRICKS_TYPICAL_SERVING_ENDPOINT ?? "").trim() || "waterfront-crowd-forecast-dummy";
+  return invokeForecast(body, fetchImpl, name);
 }

@@ -1,10 +1,10 @@
-# Placeholder forecast API
+# Frontend forecast API
 
 ## Request
 
 `GET /api/forecast?date=2026-10-10`
 
-The only required request field is `date`, a Vancouver calendar date in `YYYY-MM-DD` format, strictly after today. Location is fixed to Waterfront Station in this version. Do not require the browser to fetch downstream features or hold API keys. Return JSON with HTTP 200 on success and an appropriate non-2xx status on failure.
+The only required request field is `date`, a Vancouver calendar date in `YYYY-MM-DD` format, strictly after today. Location is fixed to Waterfront Station in this version. Keep provider credentials and model execution on the server. The browser independently calls the existing same-origin weather, event, and holiday routes so context works before the model is available. Return JSON with HTTP 200 on success and an appropriate non-2xx status on failure.
 
 ## Required response
 
@@ -19,7 +19,7 @@ The only required request field is `date`, a Vancouver calendar date in `YYYY-MM
 }
 ```
 
-The excerpt above abbreviates both arrays: **each must contain exactly 48 entries**, ordered `00:00`, `00:30`, …, `23:30`. The frontend rejects shortened arrays. See `examples/forecast-response.json` for a complete response.
+The excerpt above abbreviates both arrays: **each must contain exactly 48 entries**, ordered `00:00`, `00:30`, …, `23:30`. The frontend keeps a fallback for each missing or invalid volume/dwell field. Valid fields replace their fallback independently. Both real arrays are still required for a fully model-backed display. See `examples/forecast-response.json` for a complete response.
 
 | Field | Meaning |
 | --- | --- |
@@ -30,14 +30,16 @@ The excerpt above abbreviates both arrays: **each must contain exactly 48 entrie
 | `volume` | Nonnegative finite number: model's user-volume measure for this interval. Not automatically concurrent occupancy or unique people across the day. |
 | `dwellTime` | Nonnegative finite number: average dwell duration in minutes for the interval. If your model's statistic differs, adapt the UI label. |
 | `typicalDay` | The same shape, representing your typical comparable weekday. Define/train that baseline on the server. |
-| `context` | Optional downstream API results. Missing entries render as unavailable. Dates, when present, must match the requested day. |
-| `demo` | Optional boolean. Only set `true` for illustrative data; the UI displays a demo banner. |
+| `context` | Optional downstream API results. Successful independent context requests take precedence. Missing entries render as unavailable. Dates, when present, must match the requested day. |
+| `demo` | Boolean set by the server: `DATABRICKS_MODEL_KIND=prototype` marks served prototype values as demo. The default is `trained` for the selected-day endpoint; the typical endpoint is a live Databricks baseline, not a local fallback. |
 
 No confidence bands or causal contribution values are invented. Numeric strings are rejected; normalize them server-side or in `mapBackendResponse`.
 
+The page applies a five-slot moving average to typical volume and simple event/rain boosts to selected volume after receiving this response. Dwell is unchanged. Raw API values remain untouched; see the amounts in README.md.
+
 ## Existing downstream response shapes
 
-Pass these objects through as `context.weather`, `.events`, `.holiday`, and `.dayOfWeek`. Shapes were inspected in underscoreHasan/DatabricksXRogers, commit `7abf873796b14db4f61179cb2df3c3298af4e186`. The combined `/api/forecast` endpoint is a proposed integration contract, not an existing route verified in that repo.
+Pass these objects through as `context.weather`, `.events`, `.holiday`, and `.dayOfWeek`. Shapes were inspected in underscoreHasan/DatabricksXRogers, commit `7abf873796b14db4f61179cb2df3c3298af4e186`. The GET adapter now implements this page contract on top of the POST serving proxy described in `docs/api/API_CONTRACT.md`. It maps `volume_p50` and `dwell_p50` from `waterfront-crowd-forecast` to selected-day values, and prefers the trained response’s `usual_volume` / optional `usual_dwell` for typical-day values. Missing baseline metrics are filled from the medians on `waterfront-crowd-forecast-dummy`; it never overrides valid trained baseline values. `baselineSources.volume` and `.dwell` identify `trained`, `dummy`, or `unavailable`. Each endpoint is validated independently; an unavailable projection is null with a message in `projectionErrors`. Both endpoints failing returns 503. Absent numeric fields are null and use per-metric fallbacks in the page.
 
 ### Weather: `/api/weather?date=...`
 
@@ -75,6 +77,6 @@ Each weather row has `time` (UTC ISO timestamp), `time_local` (offset ISO timest
 
 ## Errors and deployment
 
-The client times out after 30 seconds by default. Non-2xx responses, invalid JSON, wrong response dates, unsupported units and invalid projections display an error with Retry. Loading clears old projections so a failed new date cannot masquerade as old data.
+The model client times out after 80 seconds by default; independent context requests have a 15-second client timeout. A new valid date clears the old projections and context and displays a loading state, without demo curves. Non-2xx responses, invalid JSON, wrong dates, and unsupported units display fallback curves and expose Retry. A missing or malformed volume/dwell field retains only its own fallback while valid fields are used. The legend and status line identify Databricks, demo, and demo fallback sources. The dummy baseline has one fixed weekday profile and one fixed weekend profile. Context and timeline bands update as their requests finish, even if the model fails.
 
 Use same-origin hosting when practical. For authenticated cross-origin APIs, add the required credentials/header policy in `js/api.js` and configure server CORS; do not place secrets in this export.

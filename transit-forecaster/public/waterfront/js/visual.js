@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { slotLabel, eventWindow } from './data.js';
+import { slotLabel, eventWindow, rainWindows } from './data.js';
 
 /** Map and chart renderer, preserving the original preview's design. */
 export function createVisuals(root, onSelect) {
@@ -41,9 +41,9 @@ export function createVisuals(root, onSelect) {
   }
 
   function drawChart() {
-    const width = chart.node().clientWidth, height = 170;
+    const width = chart.node().clientWidth, height = 218;
     if (!width) return;
-    const left = 48, right = 12, top = 26, bottom = 30;
+    const left = 48, right = 12, top = 26, bottom = 74;
     chart.attr('viewBox', `0 0 ${width} ${height}`).selectAll('*').remove();
     if (!forecast) {
       chart.append('text').attr('class', 'dp-chart-title').attr('x', width / 2).attr('y', 80).attr('text-anchor', 'middle').text('Awaiting day projections');
@@ -54,7 +54,7 @@ export function createVisuals(root, onSelect) {
     markerScale = d3.scaleSqrt().domain([0, maximum]).range([0, 76]);
     x = d3.scaleLinear().domain([0, 48]).range([left, width - right]);
     y = d3.scaleLinear().domain([0, maximum * 1.14]).nice().range([height - bottom, top]);
-    chart.append('text').attr('class', 'dp-axis-label').attr('x', left).attr('y', 13).text('Users / 30 min');
+    chart.append('text').attr('class', 'dp-axis-label').attr('x', left).attr('y', 13).text('Connections / 30 min');
     chart.append('text').attr('class', 'dp-axis-label').attr('text-anchor', 'end').attr('x', width - right).attr('y', height - 1).text('Local time');
     chart.append('g').attr('class', 'dp-axis').attr('transform', `translate(${left},0)`)
       .call(d3.axisLeft(y).ticks(3).tickFormat(d3.format('~s')).tickSize(-(width - left - right)))
@@ -64,13 +64,38 @@ export function createVisuals(root, onSelect) {
     const line = key => d3.line().x(row => x(row.i + .5)).y(row => y(row[key])).curve(d3.curveMonotoneX)(rows);
     chart.append('path').datum(rows).attr('fill', 'var(--dp-blue)').attr('fill-opacity', .08)
       .attr('d', d3.area().x(row => x(row.i + .5)).y0(y(0)).y1(row => y(row.selected)).curve(d3.curveMonotoneX));
-    chart.append('path').attr('fill', 'none').attr('stroke', 'var(--dp-sub)').attr('stroke-width', 1.5).attr('stroke-dasharray', '5 4').attr('d', line('typical'));
-    chart.append('path').attr('fill', 'none').attr('stroke', 'var(--dp-blue)').attr('stroke-width', 2).attr('d', line('selected'));
+    chart.append('path').attr('class', 'dp-selected-line').attr('fill', 'none').attr('stroke', 'var(--dp-blue)').attr('stroke-width', 2.5).attr('d', line('selected'));
+    // Draw the dashed baseline on top with a halo so equal series stay distinguishable.
+    chart.append('path').attr('fill', 'none').attr('stroke', 'var(--dp-bg)').attr('stroke-width', 5).attr('stroke-dasharray', '5 4').attr('d', line('typical'));
+    chart.append('path').attr('class', 'dp-typical-line').attr('fill', 'none').attr('stroke', 'var(--dp-sub)').attr('stroke-width', 2).attr('stroke-dasharray', '5 4').attr('d', line('typical'));
     const event = eventWindow(forecast.context.events?.event, forecast.date);
+    const eventY = height - 40, rainY = height - 23;
+    for (const [label, bandY] of [['Event', eventY], ['Rain', rainY]]) {
+      chart.append('text').attr('class', 'dp-axis-label').attr('x', left - 8).attr('y', bandY + 7).attr('text-anchor', 'end').text(label);
+      chart.append('rect').attr('x', left).attr('y', bandY).attr('width', width - left - right).attr('height', 8).attr('rx', 2).attr('fill', 'var(--dp-panel)');
+    }
     if (event) {
-      chart.append('rect').attr('x', x(event.startSlot)).attr('y', height - bottom - 4).attr('height', 4)
-        .attr('width', x(event.endSlot) - x(event.startSlot)).attr('fill', 'var(--dp-orange)').attr('fill-opacity', .55)
+      chart.append('rect').attr('class', 'dp-event-band').attr('x', x(event.startSlot)).attr('y', eventY).attr('height', 8)
+        .attr('width', x(event.endSlot) - x(event.startSlot)).attr('fill', 'var(--dp-orange)').attr('fill-opacity', .7)
+        .on('click', () => onSelect(Math.min(47, Math.floor(event.startSlot))))
         .append('title').text(`${event.name}: ${event.startLabel}–${event.endLabel}${event.endTimeEstimated ? ' (estimated end)' : ''}`);
+      for (const [kind, slot, label] of [
+        ['start', event.startSlot, event.startsBeforeDay ? 'Continues from previous day' : `Starts ${event.startLabel}`],
+        ['end', event.endSlot, event.endsAfterDay ? 'Continues into next day' : `Ends ${event.endLabel}${event.endTimeEstimated ? ' (estimated)' : ''}`],
+      ]) {
+        const marker = chart.append('g').attr('class', `dp-event-${kind}`);
+        marker.append('line').attr('x1', x(slot)).attr('x2', x(slot)).attr('y1', top).attr('y2', eventY + 8)
+          .attr('stroke', 'var(--dp-orange)').attr('stroke-width', 1.5).attr('stroke-dasharray', '3 3');
+        marker.append('circle').attr('cx', x(slot)).attr('cy', eventY + 4).attr('r', 3).attr('fill', 'var(--dp-orange)');
+        marker.append('title').text(`${event.name} · ${label}`);
+      }
+    }
+    const rainLabel = forecast.context.weather?.mode === 'historical_average' ? 'Historical rainfall average' : 'Rain forecast';
+    for (const rain of rainWindows(forecast.context.weather, forecast.date)) {
+      chart.append('rect').attr('class', 'dp-rain-band').attr('x', x(rain.startSlot)).attr('y', rainY).attr('height', 8)
+        .attr('width', x(rain.endSlot) - x(rain.startSlot)).attr('fill', 'var(--dp-rain)').attr('fill-opacity', .75)
+        .on('click', () => onSelect(rain.startSlot))
+        .append('title').text(`${rainLabel}: ${rain.startLabel}–${rain.endLabel}`);
     }
     chart.append('rect').attr('id', 'dp-chart-selected').attr('y', top).attr('height', height - top - bottom).attr('width', (width - left - right) / 48).attr('fill', 'var(--dp-blue)').attr('fill-opacity', .1);
     chart.append('circle').attr('id', 'dp-chart-dot').attr('r', 4).attr('fill', 'var(--dp-blue)');

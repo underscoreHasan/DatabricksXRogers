@@ -13,27 +13,28 @@
 <body>
   <main id="waterfront-day-preview">
     <div class="dp-top">
-      <div><div class="dp-kicker">Waterfront Station · Vancouver</div><h2>A day at Waterfront</h2><a href="./api-check.html">Test input APIs</a></div>
+      <div><div class="dp-kicker">Waterfront Station · Vancouver</div><h2>A day at Waterfront</h2></div>
       <label for="dp-date">Explore a future date<input id="dp-date" type="date" required aria-describedby="dp-date-help"><span id="dp-date-help" class="dp-small">Tomorrow onward · Vancouver time</span></label>
     </div>
-    <div class="dp-demo"><span id="dp-status" role="status" aria-live="polite">Choose a future date to load its projection.</span><button id="dp-retry" type="button" hidden>Retry</button></div>
+    <div class="dp-demo"><span id="dp-status" role="status" aria-live="polite">Choose a future date to load its projection.</span><button id="dp-retry" type="button" hidden>Refresh</button></div>
     <div class="dp-main" id="dp-content" aria-busy="false">
       <div class="dp-map-wrap">
         <svg id="dp-map" role="img" aria-label="Waterfront street map with a site-level activity marker and typical-weekday comparison"></svg>
         <div class="dp-map-key"><span><span class="dp-dot"></span>Selected time</span><span><span class="dp-ring"></span>Same-weekday baseline</span><span>Marker area represents activity</span></div>
-        <div class="dp-map-credit">Whole-site marker; no within-site positions. Map: <a href="https://opendata.vancouver.ca/explore/dataset/public-streets/" target="_blank" rel="noreferrer">City of Vancouver streets</a> &amp; <a href="https://opendata.vancouver.ca/explore/dataset/building-footprints-2015/" target="_blank" rel="noreferrer">2015 building outlines</a>.</div>
+        <div class="dp-map-credit">Volume counts device connections, not unique people. Whole-site marker; no within-site positions. Map: <a href="https://opendata.vancouver.ca/explore/dataset/public-streets/" target="_blank" rel="noreferrer">City of Vancouver streets</a> &amp; <a href="https://opendata.vancouver.ca/explore/dataset/building-footprints-2015/" target="_blank" rel="noreferrer">2015 building outlines</a>.</div>
       </div>
       <aside class="dp-side">
-        <div><div class="dp-small" id="dp-day">Future-day projection</div><div id="dp-time">18:00–18:30</div><div class="dp-small">Projected users / 30 min</div><div id="dp-value">—</div><div id="dp-delta">Awaiting projection</div><div class="dp-small">Average dwell <span id="dp-dwell">—</span></div><div id="dp-dwell-baseline" class="dp-small">Typical —</div></div>
+        <div><div class="dp-small" id="dp-day">Future-day projection</div><div id="dp-time">18:00–18:30</div><div class="dp-small" id="dp-value-label">Connections / 30 min</div><div id="dp-value">—</div><div id="dp-delta">Awaiting projection</div><div class="dp-small">Average dwell <span id="dp-dwell">—</span></div><div id="dp-dwell-baseline" class="dp-small">Typical —</div></div>
         <div><h3>Context for this interval</h3><div id="dp-reasons"><div class="dp-small">Weather, holiday and event details appear here.</div></div></div>
       </aside>
     </div>
     <div class="dp-playback">
-      <div class="dp-timeline-head"><h3>The whole day</h3><div class="dp-legend"><span><span class="dp-solid"></span>Selected day</span><span><span class="dp-dashed"></span><span id="dp-baseline-label">Typical weekday</span></span></div></div>
-      <svg id="dp-chart" role="img" aria-label="Full-day user-volume projection and typical-weekday comparison"></svg>
+      <div class="dp-timeline-head"><h3>The whole day</h3><div class="dp-legend"><span><span class="dp-solid"></span><span id="dp-selected-label">Selected day</span></span><span><span class="dp-dashed"></span><span id="dp-baseline-label">Typical weekday</span></span><span><span class="dp-event-key"></span>Event start/end</span><span><span class="dp-rain-key"></span><span id="dp-rain-label">Rain</span></span></div></div>
+      <svg id="dp-chart" role="img" aria-label="Full-day user-volume comparison with event start and end markers and rain windows"></svg>
       <div class="dp-controls"><button id="dp-play" type="button" aria-pressed="false" disabled>Play day</button><div class="dp-slider-block"><div class="dp-slider-head"><label for="dp-slider">30-minute timeline</label><span id="dp-selected">18:00–18:30</span></div><input id="dp-slider" type="range" min="0" max="47" step="1" value="36" disabled aria-label="Select a half-hour interval"></div></div>
       <div class="dp-event-line" id="dp-windows"></div>
       <div id="dp-event-detail" class="dp-event-detail" hidden></div>
+      <div id="dp-rain-detail" class="dp-event-detail"></div>
       <div id="dp-a11y" class="dp-mobile-sr" aria-live="polite"></div>
     </div>
   </main>

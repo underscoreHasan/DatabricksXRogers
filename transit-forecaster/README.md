@@ -13,7 +13,7 @@ npm run dev
 
 Open [localhost:3000](http://localhost:3000) to view the Waterfront frontend. `/waterfront` also opens it. The page and existing `/api/*` routes share this dev server; no separate frontend server is needed.
 
-The frontend expects `/api/forecast`, which is not implemented yet, so it displays a setup error until that endpoint is connected.
+The frontend calls `GET /api/forecast?date=YYYY-MM-DD`, which collects context and adapts Databricks serving output. It immediately shows fixed illustrative volume and dwell profiles for selected and typical days. Valid served volume and dwell fields replace their own fallback when available; a missing typical dwell value does not discard the served typical volume. Weather, events, and holiday context load independently; event boundaries and rain windows appear on the timeline even when the model is unavailable.
 
 - `public/waterfront/` — frontend HTML, CSS, JavaScript, and assets
 - `next.config.ts` — homepage and `/waterfront` redirects
@@ -24,7 +24,7 @@ Production: `npm run build`, then `npm start`.
 
 ## Manual API tester
 
-With `npm run dev` running, use **Test input APIs** on the Waterfront page or open [the tester](http://localhost:3000/waterfront/api-check.html). Choose a date and click **Test APIs** to call weather, events, day-of-week, holiday, and health together. Each result shows its HTTP status, duration, summary, and full JSON; weather also has a 48-row table. **Download JSON** saves all results, including errors and partial lookups. The forecast endpoint is not called.
+With `npm run dev` running, open [the tester](http://localhost:3000/waterfront/api-check.html). Choose a date and click **Test APIs** to call weather, events, day-of-week, holiday, and health together. Each result shows its HTTP status, duration, summary, and full JSON; weather also has a 48-row table. **Download JSON** saves all results, including errors and partial lookups. The forecast endpoint is not called.
 
 Try tomorrow for forecast weather, `2027-07-01` for a holiday and historical weather, or a past date to check weather validation. Backend caches apply. This inspects the fetched inputs; the model's final feature encoding is still to be connected.
 
@@ -147,6 +147,12 @@ Complete provider responses are cached for 15 minutes (forecast) or 24 hours (ar
 
 ## Crowd forecast API
 
+`GET /api/forecast?date=YYYY-MM-DD` is the frontend adapter. It gathers weather, event, holiday, and weekday responses, builds 48 Vancouver wall-clock rows, and calls `waterfront-crowd-forecast` for the selected day. The trained response’s `usual_volume` supplies typical volume, with optional `usual_dwell`. A separate date-only call to `waterfront-crowd-forecast-dummy` supplies only missing baseline metrics; its fixed profile never replaces valid trained baseline values. `baselineSources` reports the selected source for volume and dwell. Configure the latter with `DATABRICKS_TYPICAL_SERVING_ENDPOINT`. An unavailable endpoint leaves only its own projection null for the frontend fallback; both failing returns 503. The page smooths typical volume across five slots and adds simple event/rain boosts to selected volume, as documented in [the frontend README](public/waterfront/README.md).
+
+Weather overrides retain the API's hourly amounts duplicated at half-hour resolution. Event overlap is computed from UTC timestamps against Vancouver's UTC−7 day: large/small events are encoded for those model categories; medium events use a generic `medium_ticketmaster` ID. Holiday API positives add `holiday` to every slot. Unavailable inputs are omitted, allowing the serving model's documented defaults. The prototype also applies its own holiday calendar (which includes some observed dates and Boxing Day); that policy differs from the context API and must be aligned before treating holiday effects as trained output.
+
+`DATABRICKS_MODEL_KIND` defaults to `trained` for the selected-day endpoint. Use `prototype` only when deliberately serving a prototype there. The page labels Databricks and demo sources explicitly and waits for the forecast response before showing any fallback. The dummy endpoint has one fixed weekday profile and one fixed weekend profile. The browser's 80-second deadline covers context loading and the server's 60-second cold-start allowance. Credentials stay in `.env.local` and on the server.
+
 `POST /api/forecast` validates the [serving contract](../docs/api/API_CONTRACT.md) and forwards a valid payload to Databricks Model Serving. Copy `DATABRICKS_HOST` and `DATABRICKS_TOKEN` into `.env.local` (see `.env.example`).
 
 ```sh
@@ -155,7 +161,7 @@ curl -s -X POST 'http://localhost:3000/api/forecast' \
   -d '{"dataframe_records": [{"date": "2026-09-12"}]}'
 ```
 
-Missing or invalid `date` returns **400** before Databricks is called. A missing token, a cold/failed endpoint, or an unexpected payload returns **503**. The dummy model lives at `workspace.databricksxrogers.waterfront_crowd_forecast` behind endpoint `waterfront-crowd-forecast`. Point that endpoint at a new version to swap in the real model; this route does not change.
+Missing or invalid `date` returns **400** before Databricks is called. A missing token, a cold/failed endpoint, or an unexpected payload returns **503**. The trained selected-day model is served by `waterfront-crowd-forecast`; the typical baseline is served by `waterfront-crowd-forecast-dummy`. Both use versions of `workspace.databricksxrogers.waterfront_crowd_forecast`.
 
 Register or refresh the dummy:
 

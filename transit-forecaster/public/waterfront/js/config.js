@@ -1,7 +1,7 @@
 export const CONFIG = Object.freeze({
-  // PLACEHOLDER: implement this endpoint or point it at your existing backend.
+  // Date-based adapter over the server-only Databricks serving request.
   forecastEndpoint: '/api/forecast',
-  requestTimeoutMs: 30_000,
+  requestTimeoutMs: 80_000,
   timezone: 'America/Vancouver',
   // Matches the supplied backend's future-date UTC−7 convention, including on
   // browsers whose timezone database still applies the old autumn transition.

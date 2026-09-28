@@ -5,9 +5,9 @@ Forecasts crowd **inflow** and **dwell time** in the Waterfront Station area for
 - **Serving:** Databricks Model Serving (REST)
 - **Model:** Unity Catalog `workspace.databricksxrogers.waterfront_crowd_forecast`
 - **Endpoint:** `waterfront-crowd-forecast`
-- **Status:** hackathon prototype. The contract is stable; swap the registered model version behind the same endpoint when the real model is ready.
+- **Typical-day endpoint:** `waterfront-crowd-forecast-dummy` uses the same serving contract. The selected-day endpoint serves the trained model; the trained response’s `usual_volume` supplies the baseline, with the dummy used only for missing baseline metrics.
 
-The Next.js app must not call Databricks from the browser. `POST /api/forecast` forwards this payload.
+The Next.js app must not call Databricks from the browser. `POST /api/forecast` forwards this payload. `GET /api/forecast?date=YYYY-MM-DD` gathers the existing context APIs and adapts these serving rows for the Waterfront page; see `transit-forecaster/public/waterfront/API-CONTRACT.md`. The GET adapter prefers the trained response’s `usual_volume` and optional `usual_dwell` for the baseline. The separate dummy endpoint fills only missing baseline metrics and cannot override usable trained values. The page uses fallback values only for unavailable volume or dwell fields; it smooths typical volume and adds explicitly labelled event/rain boosts to selected volume.
 
 ---
 

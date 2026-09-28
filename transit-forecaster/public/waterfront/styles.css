@@ -29,7 +29,7 @@
     #waterfront-day-preview .dp-legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--dp-sub)}
     #waterfront-day-preview .dp-dashed{display:inline-block;width:17px;border-top:2px dashed var(--dp-sub);vertical-align:middle;margin-right:5px}
     #waterfront-day-preview .dp-solid{display:inline-block;width:17px;border-top:2px solid var(--dp-blue);vertical-align:middle;margin-right:5px}
-    #waterfront-day-preview #dp-chart{width:100%;height:170px;display:block;touch-action:pan-y}
+    #waterfront-day-preview #dp-chart{width:100%;height:218px;display:block;touch-action:pan-y}
     #waterfront-day-preview .dp-controls{display:flex;align-items:center;gap:13px}
     #waterfront-day-preview .dp-controls button{font:inherit;background:var(--dp-text);color:var(--dp-bg);padding:9px 13px;border:0;border-radius:8px;min-width:75px}
     #waterfront-day-preview .dp-slider-block{flex:1;min-width:0}
@@ -74,3 +74,11 @@ body { margin: 0; padding: 28px 20px; background: light-dark(#eef2f5, #0c1218); 
 @media (max-width: 380px) {
   #waterfront-day-preview .dp-side { grid-template-columns: 1fr; }
 }
+
+/* Context bands remain visible for fallback and model curves alike. */
+#waterfront-day-preview { --dp-rain: light-dark(#267e94, #7bd1df); }
+#waterfront-day-preview .dp-legend { row-gap: 8px; }
+#waterfront-day-preview .dp-event-key, #waterfront-day-preview .dp-rain-key { display: inline-block; width: 17px; height: 7px; border-radius: 2px; margin-right: 5px; }
+#waterfront-day-preview .dp-event-key { background: var(--dp-orange); }
+#waterfront-day-preview .dp-rain-key { background: var(--dp-rain); }
+#waterfront-day-preview .dp-event-band, #waterfront-day-preview .dp-rain-band { cursor: pointer; }
